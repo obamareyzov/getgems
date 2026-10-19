@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GetGems Pricer</title>
+  <style>
+    :root {
+      --bg: #0f0f12;
+      --card: #1a1a20;
+      --accent: #7c5cfc;
+      --text: #e8e8ed;
+      --muted: #888;
+      --green: #3dd68c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      padding: 24px 20px;
+      border-bottom: 1px solid #2a2a32;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header h1 { margin: 0; font-size: 1.4rem; }
+    .badge {
+      background: var(--accent);
+      color: white;
+      font-size: 0.75rem;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+    main { padding: 20px; max-width: 1100px; margin: 0 auto; }
+    .stats {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .stat {
+      background: var(--card);
+      padding: 16px 20px;
+      border-radius: 12px;
+      min-width: 140px;
+    }
+    .stat b { font-size: 1.4rem; display: block; }
+    .stat span { color: var(--muted); font-size: 0.85rem; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid #2a2a32;
+    }
+    th { color: var(--muted); font-weight: 500; font-size: 0.85rem; }
+    tr:last-child td { border-bottom: none; }
+    .ok { color: var(--green); }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    footer {
+      text-align: center;
+      padding: 30px;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>GetGems Pricer</h1>
+    <span class="badge">Telegram Usernames</span>
+  </header>
+  <main>
+    <div class="stats">
+      <div class="stat"><b id="total">0</b><span>найдено</span></div>
+      <div class="stat"><b id="wallets">0</b><span>кошельков</span></div>
+    </div>
+    <div id="content">
+      <div class="empty">Загрузка результатов...</div>
+    </div>
+  </main>
+  <footer>GetGems Hunter · результаты из results.json</footer>
+
+  <script>
+    async function load() {
+      try {
+        const res = await fetch('results.json');
+        if (!res.ok) throw new Error('no file');
+        const data = await res.json();
+        render(data);
+      } catch (e) {
+        document.getElementById('content').innerHTML =
+          '<div class="empty">Пока нет результатов.<br>Запусти скрипт и залей results.json</div>';
+      }
+    }
+
+    function render(data) {
+      document.getElementById('total').textContent = data.length;
+      const wallets = new Set(data.map(d => d.owner)).size;
+      document.getElementById('wallets').textContent = wallets;
+
+      if (!data.length) {
+        document.getElementById('content').innerHTML =
+          '<div class="empty">Результатов пока нет</div>';
+        return;
+      }
+
+      let html = `<table>
+        <thead><tr>
+          <th>Подарок</th>
+          <th>Юзернейм</th>
+          <th>Кошелёк</th>
+          <th>Проверено</th>
+        </tr></thead><tbody>`;
+
+      for (const item of data) {
+        const date = item.checked_at ? new Date(item.checked_at).toLocaleString('ru') : '—';
+        html += `<tr>
+          <td>${item.gift || '—'}</td>
+          <td><a href="https://t.me/${item.username}" target="_blank">@${item.username}</a></td>
+          <td><code>${(item.owner || '').slice(0, 12)}…</code></td>
+          <td>${date}</td>
+        </tr>`;
+      }
+      html += '</tbody></table>';
+      document.getElementById('content').innerHTML = html;
+    }
+
+    load();
+  </script>
+</body>
+</html>
